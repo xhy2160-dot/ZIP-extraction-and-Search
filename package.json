@@ -1,0 +1,21 @@
+{
+  "name": "sdu",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.17",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "node-cron": "^4.2.1",
+    "nodemon": "^3.1.14",
+    "unzipper": "^0.12.3"
+  }
+}
