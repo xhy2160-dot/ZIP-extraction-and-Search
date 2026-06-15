@@ -11,10 +11,7 @@ require('./cron-cleanup');
 const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 3000;
-const allowedOrigins = [
-    'http://localhost:5173'
-];
-
+app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
