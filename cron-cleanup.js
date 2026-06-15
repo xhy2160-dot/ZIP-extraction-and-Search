@@ -3,42 +3,51 @@ const path = require('path');
 const cron = require('node-cron');
 
 const baseUploadsDir = path.resolve(__dirname, 'uploads');
+// 2 hours in milliseconds (2 hours * 60 mins * 60 secs * 1000 ms)
+const MAX_AGE_MS = 2 * 60 * 60 * 1000;
 
-const purgeAllUploads = () => {
-    console.log(`[CRON] Starting absolute storage wipe at ${new Date().toISOString()}`);
+const purgeExpiredUploads = () => {
+    console.log(`[CRON] Running hourly retention check at ${new Date().toISOString()}`);
 
     if (!fs.existsSync(baseUploadsDir)) {
-        // If the uploads directory doesn't exist, create it and exit
         fs.mkdirSync(baseUploadsDir, { recursive: true });
         return;
     }
 
     try {
-        // 1. Read all files/folders inside the uploads directory
         const items = fs.readdirSync(baseUploadsDir);
+        const now = Date.now();
+        let deletedCount = 0;
 
         items.forEach(item => {
             const itemPath = path.join(baseUploadsDir, item);
 
             try {
-                // 2. Force delete files and sub-folders recursively
-                fs.rmSync(itemPath, { recursive: true, force: true });
-                console.log(`[CRON] Eradicated asset: ${item}`);
+                // Get file/folder metadata stats
+                const stats = fs.statSync(itemPath);
+                const fileAge = now - stats.mtimeMs;
+
+                // Only delete if the asset is older than 2 hours
+                if (fileAge > MAX_AGE_MS) {
+                    fs.rmSync(itemPath, { recursive: true, force: true });
+                    console.log(`[CRON] Eradicated expired asset: ${item} (Age: ${Math.round(fileAge / 1000 / 60)} mins)`);
+                    deletedCount++;
+                }
             } catch (fileError) {
-                console.error(`[CRON] Windows file-lock blocked deletion for ${item}:`, fileError.message);
+                console.error(`[CRON] Windows file-lock or permission issue blocked checking/deleting ${item}:`, fileError.message);
             }
         });
 
-        console.log('[CRON] Uploads folder purge complete.');
+        console.log(`[CRON] Hourly check complete. Purged ${deletedCount} expired assets.`);
 
     } catch (dirError) {
         console.error('[CRON] Critical error during folder wipe routine:', dirError);
     }
 };
 
-// Scheduled to run every single day at exactly 20:00 PM
-cron.schedule('0 20 * * *', () => {
-    purgeAllUploads();
+// '0 * * * *' matches minute 0 of every single hour (1:00, 2:00, 3:00, etc.)
+cron.schedule('0 * * * *', () => {
+    purgeExpiredUploads();
 });
 
-console.log('[CRON] Hard-wipe scheduler initialized for 20:00 PM daily.');
+console.log('[CRON] Hourly retention scheduler initialized (Files older than 2 hours will be purged).');

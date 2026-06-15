@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -10,6 +11,15 @@ require('./cron-cleanup');
 const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 3000;
+const allowedOrigins = [
+    'http://localhost:5173'
+];
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Ensure upload directory exists
 const uploadDir = path.join(__dirname, 'uploads');
@@ -55,6 +65,20 @@ const upload = multer({
         fileSize: 500 * 1024 * 1024 // Optional: Limit file size (e.g., 500MB)
     }
 });
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    credentials: false
+}));
 
 // Enable CORS if your Vue frontend is running on a different port (e.g., localhost:5173)
 // You can use the 'cors' npm package, or this simple middleware:
