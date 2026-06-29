@@ -12,6 +12,7 @@ const app = express();
 app.use(express.json());
 const PORT = process.env.PORT || 3000;
 app.use(cors());
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.json({ limit: '100mb' }));
@@ -66,28 +67,6 @@ const upload = multer({
     limits: {
         fileSize: 500 * 1024 * 1024 // Optional: Limit file size (e.g., 500MB)
     }
-});
-
-app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-            return callback(new Error(msg), false);
-        }
-        return callback(null, true);
-    },
-    credentials: false
-}));
-
-// Enable CORS if your Vue frontend is running on a different port (e.g., localhost:5173)
-// You can use the 'cors' npm package, or this simple middleware:
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    next();
 });
 
 // 4. The Upload Endpoint
